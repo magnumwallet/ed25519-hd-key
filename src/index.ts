@@ -22,8 +22,12 @@ const HARDENED_OFFSET = 0x80000000;
 let naclInstance: Nacl;
 naclFactory.instantiate((nacl: Nacl) => (naclInstance = nacl));
 
-export const getMasterKeyFromSeed = (seed: Hex): Keys => {
-    const hmac = createHmac('sha512', ED25519_CURVE);
+export const getCurveSeed = (): Hex => {
+    return ED25519_CURVE;
+};
+
+export const getMasterKeyFromSeed = (seed: Hex, curveSeed: Hex = ''): Keys => {
+    const hmac = createHmac('sha512', curveSeed ? curveSeed : getCurveSeed());
     const I = hmac.update(Buffer.from(seed, 'hex')).digest();
     const IL = I.slice(0, 32);
     const IR = I.slice(32);
@@ -69,12 +73,12 @@ export const isValidPath = (path: string): boolean => {
         .some(isNaN as any /* ts T_T*/);
 };
 
-export const derivePath = (path: Path, seed: Hex): Keys => {
+export const derivePath = (path: Path, seed: Hex, curveSeed: Hex = ''): Keys => {
     if (!isValidPath(path)) {
         throw new Error('Invalid derivation path');
     }
 
-    const { key, chainCode } = getMasterKeyFromSeed(seed);
+    const { key, chainCode } = getMasterKeyFromSeed(seed, curveSeed);
     const segments = path
         .split('/')
         .slice(1)
